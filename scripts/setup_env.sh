@@ -17,4 +17,4 @@ log "Installing dependencies..."
 pip install uv
 uv pip install -r requirements.txt
 
-log "Environment setup complete. Virtual environment is activated!"
+log "Virtual environment setup complete."
