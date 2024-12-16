@@ -5,7 +5,8 @@ from torch import Tensor
 
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int):
-        """Embedding layer for input tokens
+        """
+        Embedding layer for input tokens
 
         Args:
             d_model (int): Hidden dimension of the model. The size of the vector
@@ -30,12 +31,14 @@ class InputEmbeddings(nn.Module):
         Returns:
             Tensor: Embedded input of shape `(batch_size, seq_len, d_model)`.
         """
+        # seq_len dimension contains token ids that can be mapped back to unique word
         return self.embedding(x) * self.d_model**0.5
 
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model: int, max_seq_len: int = 512, dropout: float = 0.1):
-        """Positional encoding / embeddings for input tokens
+        """
+        Positional encoding / embeddings for input tokens
 
         Args:
             d_model (int): Hidden dimension of the model. The size of the vector
