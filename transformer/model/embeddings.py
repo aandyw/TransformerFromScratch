@@ -9,8 +9,10 @@ class InputEmbeddings(nn.Module):
 
         Args:
             d_model (int): Hidden dimension of the model. The size of the vector
-                representations (embeddings / hidden states) used throughout the Transformer model.
-            vocab_size (int): Size of the vocabulary. Number of unique tokens in the input data.
+                representations (embeddings / hidden states) used throughout the
+                Transformer model.
+            vocab_size (int): Size of the vocabulary. Number of unique tokens in the
+                input data.
         """
         super().__init__()
         self.d_model = d_model
