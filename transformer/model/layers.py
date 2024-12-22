@@ -10,6 +10,9 @@ class LayerNormalization(nn.Module):
         BatchNorm, which normalizes across the batch dimension. It normalizes the inputs
         across the feature dimension.
 
+        Purpose: Mitigate internal covariate shift thus improving training speed,
+        stability, and convergence of the model. Also, improves generalization.
+
         Args:
             eps (float, optional): Epsilon value to avoid division by zero. Defaults to 1e-6.
         """
@@ -50,3 +53,13 @@ class FeedForwardBlock(nn.Module):
         x = self.linear2(x)
 
         return x
+
+
+class ResidualConnection(nn.Module):
+    def __init__(self, dropout: float = 0.1):
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+        self.norm = LayerNormalization()
+
+    def forward(self, x: Tensor, sublayer: nn.Module) -> Tensor:
+        return x + self.dropout(sublayer(self.norm(x)))
