@@ -1,82 +1,81 @@
 import numpy as np
 
 import torch
-from torch.nn import nn
-
-
-class ScaledDotProductAttention(nn.Module):
-    """Scaled Dot Product Attention"""
-
-    def __init__(self, d_model, d_k, d_v, dropout=0.0, mask=False):
-        """
-        Args:
-            d_model (int):
-            d_k (int): Dimension of queries and keys. Sequence length.
-            d_v (int): _description_
-            dropout (float, optional):
-            mask (bool, optional): _description_. Defaults to False.
-        """
-        super().__init__()
-        self.query = nn.Linear(d_model, d_k)  # W_q
-        self.key = nn.Linear(d_model, d_k)  # W_k
-        self.values = nn.Linear(d_model, d_v)  # W_v
-        self.dropout = nn.Dropout(dropout)
-        self.mask = mask
-
-    def forward(self, q, k, v):
-        d_k = q.size(-1)
-        scores = torch.matmul(q, k.transpose(...)) / torch.sqrt(d_k)
-
-        if self.mask is not None:
-            mask = torch.triu(torch.ones(...), diagonal=1)
-            mask = mask.unsqueeze(0).repeat(..., 1, 1)
-            scores = scores.masked_fill(mask == 0, float("-inf"))
-
-        weights = torch.softmax(scores, dim=1)
-        return torch.matmul()
+import torch.nn as nn
+from torch import Tensor
+import math
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, num_heads):
-        pass
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.1):
+        super().__init__()
+        self.d_model = d_model
+        self.num_heads = num_heads  # aka. `h`
 
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        qkv_weights: torch.Tensor,
-        o_weights: torch.Tensor,
-        num_heads: int,
-        scaled_softmax: float,
-    ) -> torch.Tensor:
-        """Compute multi-headed attention
+        assert d_model % num_heads == 0  # Ensure d_model is divisible by num_heads
 
-        Args:
-            hidden_states (torch.Tensor): [batch_size, seq_len, hidden_dim]
-            qkv_weights (torch.Tensor): [hidden_dim, 3 x hidden_dim]
-            o_weights (torch.Tensor): [hidden_dim, hidden_dim]
-            num_heads (int): The number of attention heads
-            scaled_softmax (float): The scaling for the softmax
+        self.d_k = d_model // num_heads  # d_k = d_v
 
-        Returns:
-            torch.Tensor: The hidden states with updated multi-headed attention
-        """
+        self.W_q = nn.Linear(d_model, d_model)
+        self.W_k = nn.Linear(d_model, d_model)
+        self.W_v = nn.Linear(d_model, d_model)
+        self.W_o = nn.Linear(d_model, d_model)
+        self.dropout = nn.Dropout(dropout)
 
-        batch_size, seq_len, hidden_dim = hidden_states.shape  # hidden_dim = 512
-        d = hidden_dim // num_heads  # single-head attention dim = 512 // 8 = 64
+    @staticmethod
+    def scaled_dot_product_attention(
+        q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None, dropout: nn.Dropout | None
+    ) -> tuple[Tensor, Tensor]:
+        """Compute Scaled Dot Product Attention"""
 
-        # obtain query, key, value matrices
-        qkv = torch.matmul(hidden_states, qkv_weights)  # [B, S, 3D]
+        d_k = q.shape[-1]
 
-        # extract q,k,v across multiple heads
-        qkv = qkv.reshape(batch_size, seq_len, 3, num_heads, d)  # [B, S, seq_len, 3, num_heads, d]
-        q, k, v = qkv.chunk(3, ...)
-        ...
+        # (bs, num_heads, seq_len, d_k) -> (bs, num_heads, seq_len, seq_len)
+        scores = (q @ k.transpose(-2, -1)) / math.sqrt(d_k)
 
-        attn_scores = torch.matmul(q, k.tranpose(-2, -1)) / np.sqrt(d)
-        attn_weights = scaled_softmax * torch.matmul(torch.softmax(attn_scores), v)  # [B, S, seq_len, ]
+        if mask:
+            # For all values in mask == 0 replace with -inf
+            scores = scores.masked_fill(mask == 0, float("-inf"))
 
-        attn_multi_head = torch.cat(attn_weights, dim=...)
+        scores = torch.softmax(scores, dim=-1)  # (bs, num_heads, seq_len, seq_len)
 
-        # mapping back to hidden dim
-        o = torch.matmul(attn_multi_head, o_weights)  # [B, S, seq_len, d]
-        return o
+        if dropout:
+            scores = dropout(scores)
+
+        weights = scores @ v  # (bs, num_heads, seq_len, d_k)
+
+        # We return the scores for visualization
+        return weights, scores
+
+    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor) -> Tensor:
+        query = self.W_q(q)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)
+        key = self.W_k(k)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)
+        value = self.W_v(v)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)
+
+        # (bs, seq_len, d_model) -> (bs, seq_len, num_heads, d_k)
+        query = query.view(query.shape[0], query.shape[1], self.num_heads, self.d_k)
+        # (bs, seq_len, num_heads, d_k) -> (bs, num_heads, seq_len, d_k)
+        query = query.transpose(1, 2)
+
+        key = key.view(key.shape[0], key.shape[1], self.num_heads, self.d_k)
+        key = key.transpose(1, 2)
+
+        value = value.view(value.shape[0], value.shape[1], self.num_heads, self.d_k)
+        value = value.transpose(1, 2)
+
+        weights, scores = MultiHeadAttention.scaled_dot_product_attention(
+            query, key, value, mask, self.dropout
+        )
+
+        ### Perform concatenation of the heads ###
+
+        # (bs, num_heads, seq_len, d_k) -> (bs, seq_len, num_heads, d_k)
+        weights = weights.transpose(1, 2)
+
+        # (bs, seq_len, num_heads, d_k) -> (bs, seq_len, d_model)
+        concat = weights.contiguous().view(
+            weights.shape[0], weights.shape[1], self.d_model
+        )
+
+        # (bs, seq_len, d_model) -> (bs, seq_len, d_model)
+        return self.W_o(concat)
