@@ -36,7 +36,7 @@ class InputEmbeddings(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model: int, max_seq_len: int = 512, dropout: float = 0.1):
+    def __init__(self, d_model: int, max_seq_len: int, dropout: float = 0.1):
         """
         Positional encoding / embeddings for input tokens
 
@@ -44,7 +44,7 @@ class PositionalEncoding(nn.Module):
             d_model (int): Hidden dimension of the model. The size of the vector
                 representations (embeddings / hidden states) used throughout the
                 Transformer model.
-            max_seq_len (int, optional): Maximum sequence length. Defaults to 512.
+            max_seq_len (int, optional): Maximum sequence length.
             dropout (float, optional): Dropout rate. Defaults to 0.1.
         """
         super().__init__()
