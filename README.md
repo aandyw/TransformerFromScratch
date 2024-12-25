@@ -1,6 +1,15 @@
 # TransformerFromScratch
 🤖
 
+## Setup
+
+Setup the local development environment using
+
+```bash
+./scripts/setup_env.sh     # Create virtual env & download dependencies
+source .venv/bin/activate  # Activate it
+```
+
 
 # Acknowledgements
 A variety of resources that really helped us out in understanding and implementing the Transformer model

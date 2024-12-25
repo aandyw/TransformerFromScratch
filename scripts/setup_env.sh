@@ -1,6 +1,6 @@
 #!/bin/bash
 SCRIPT_DIR=$(dirname "$0")
-source "$SCRIPT_DIR/log.sh"
+source "$SCRIPT_DIR/utils.sh"
 
 # Create a virtual environment if it doesn't exist
 if [ ! -d ".venv" ]; then
