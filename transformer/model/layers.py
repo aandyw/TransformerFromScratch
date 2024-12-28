@@ -46,6 +46,11 @@ class FeedForwardBlock(nn.Module):
         """
         1. (batch_size, seq_len, d_model) -> (batch_size, seq_len, d_ff)
         2. (batch_size, seq_len, d_ff) -> (batch_size, seq_len, d_model)
+
+        Args:
+            x (Tensor): The input tensor. `(batch_size, seq_len, d_model)`
+        Returns:
+            Tensor: The output tensor. `(batch_size, seq_len, d_model)`
         """
         x = self.linear1(x)
         x = torch.relu(x)
@@ -63,3 +68,21 @@ class ResidualConnection(nn.Module):
 
     def forward(self, x: Tensor, sublayer: nn.Module) -> Tensor:
         return x + self.dropout(sublayer(self.norm(x)))
+
+
+class LinearLayer(nn.Module):
+    def __init__(self, d_model: int, vocab_size: int):
+        """
+        Linear Layer is a projection layer that converts the embedding into the
+        vocabulary.
+
+        Args:
+            d_model (int): The size of the model's hidden dimension.
+            vocab_size (int): The size of the vocabulary.
+        """
+        super().__init__()
+        self.linear = nn.Linear(d_model, vocab_size)
+
+    def forward(self, x: Tensor) -> Tensor:
+        # (bs, seq_len, d_model) -> (bs, seq_len, vocab_size)
+        return torch.log_softmax(self.linear(x), dim=-1)

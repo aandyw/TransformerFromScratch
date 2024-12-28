@@ -1,7 +1,8 @@
+import math
+
 import torch
 import torch.nn as nn
 from torch import Tensor
-import math
 
 
 class MultiHeadAttention(nn.Module):
@@ -45,7 +46,7 @@ class MultiHeadAttention(nn.Module):
         # We return the scores for visualization
         return weights, scores
 
-    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor) -> Tensor:
+    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None) -> Tensor:
         query = self.W_q(q)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)
         key = self.W_k(k)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)
         value = self.W_v(v)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)

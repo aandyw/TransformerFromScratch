@@ -83,5 +83,6 @@ class PositionalEncoding(nn.Module):
 
         # Add positional encodings to input embeddings
         seq_len = x.size(1)
+        # Shorten positional encodings if seq_len is greater than max_seq_len
         x = x + self.pe[:, :seq_len, :]
         return self.dropout(x)
