@@ -10,6 +10,10 @@ Setup the local development environment using
 source .venv/bin/activate  # Activate it
 ```
 
+## Training
+1. Login to huggingface with `huggingface-cli login`
+2. Run `python transformer/train.py`
+
 
 # Acknowledgements
 A variety of resources that really helped us out in understanding and implementing the Transformer model
