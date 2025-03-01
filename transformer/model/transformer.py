@@ -1,8 +1,10 @@
 import torch.nn as nn
-from attention import MultiHeadAttention
-from embeddings import InputEmbeddings, PositionalEncoding
-from layers import FeedForwardBlock, LayerNormalization, LinearLayer, ResidualConnection
 from torch import Tensor
+
+from .attention import MultiHeadAttention
+from .embeddings import InputEmbeddings, PositionalEncoding
+from .layers import (FeedForwardBlock, LayerNormalization, LinearLayer,
+                     ResidualConnection)
 
 
 ### ENCODER ###
@@ -159,13 +161,35 @@ class Transformer(nn.Module):
         self.projection_layer = projection_layer
 
     def encode(self, src: Tensor, src_mask: Tensor) -> Tensor:
+        """Forward pass through the encoder.
+
+        Args:
+            src (Tensor): Input tokens as type int64.
+            src_mask (Tensor): _description_
+
+        Returns:
+            Tensor: _description_
+        """
+        # embedding maps token ids to dense vectors of type float32
         src = self.src_embed(src)
         src = self.src_pos(src)
         return self.encoder(src, src_mask)
 
     def decode(
-        self, tgt: Tensor, encoder_output: Tensor, src_mask: Tensor, tgt_mask: Tensor
+        self, encoder_output: Tensor, src_mask: Tensor, tgt: Tensor, tgt_mask: Tensor
     ) -> Tensor:
+        """Forward pass through the decoder.
+
+        Args:
+            encoder_output (Tensor): _description_
+            src_mask (Tensor): _description_
+            tgt (Tensor): _description_
+            tgt_mask (Tensor): _description_
+
+        Returns:
+            Tensor: _description_
+        """
+
         tgt = self.tgt_embed(tgt)
         tgt = self.tgt_pos(tgt)
         return self.decoder(tgt, encoder_output, src_mask, tgt_mask)

@@ -32,13 +32,13 @@ class MultiHeadAttention(nn.Module):
         # (bs, num_heads, seq_len, d_k) -> (bs, num_heads, seq_len, seq_len)
         scores = (q @ k.transpose(-2, -1)) / math.sqrt(d_k)
 
-        if mask:
+        if mask is not None:
             # For all values in mask == 0 replace with -inf
             scores = scores.masked_fill(mask == 0, float("-inf"))
 
         scores = torch.softmax(scores, dim=-1)  # (bs, num_heads, seq_len, seq_len)
 
-        if dropout:
+        if dropout is not None:
             scores = dropout(scores)
 
         weights = scores @ v  # (bs, num_heads, seq_len, d_k)

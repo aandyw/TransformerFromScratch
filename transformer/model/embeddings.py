@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 from torch import Tensor
@@ -32,10 +34,12 @@ class InputEmbeddings(nn.Module):
             Tensor: Embedded input of shape `(batch_size, seq_len, d_model)`.
         """
         # seq_len dimension contains token ids that can be mapped back to unique word
-        return self.embedding(x) * self.d_model**0.5
+        return self.embedding(x) * math.sqrt(self.d_model)
 
 
 class PositionalEncoding(nn.Module):
+    pe: Tensor
+
     def __init__(self, d_model: int, max_seq_len: int, dropout: float = 0.1):
         """
         Positional encoding / embeddings for input tokens
@@ -55,13 +59,12 @@ class PositionalEncoding(nn.Module):
         # Create positional encodings of shape (max_seq_len, d_model)
         pe = torch.zeros(max_seq_len, d_model)
 
-        ### REFER TO 3.5 Positional Encoding in [paper](https://arxiv.org/pdf/1706.03762) ###
+        ### REFER TO 3.5 Positional Encoding ###
 
         # Create tensor of shape (max_seq_len, 1)
         pos = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(
-            torch.arange(0, d_model, 2).float()
-            * (-torch.log(Tensor(10000.0)) / d_model)
+            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
         )
         pe[:, 0::2] = torch.sin(pos * div_term)  # Even positions
         pe[:, 1::2] = torch.cos(pos * div_term)  # Odd positions
@@ -84,5 +87,6 @@ class PositionalEncoding(nn.Module):
         # Add positional encodings to input embeddings
         seq_len = x.size(1)
         # Shorten positional encodings if seq_len is greater than max_seq_len
-        x = x + self.pe[:, :seq_len, :]
+        pe_out = (self.pe[:, :seq_len, :]).requires_grad_(False)
+        x = x + pe_out
         return self.dropout(x)
