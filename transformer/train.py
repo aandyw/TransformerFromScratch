@@ -1,11 +1,9 @@
 from pathlib import Path
+from typing import Callable, Iterator
 
 import torch
 import torch.nn as nn
-from config import get_config, TransformerConfig
-from dataset import BilingualDataset, create_causal_mask
 from datasets import load_dataset
-from model.transformer import Transformer, build_transformer
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
@@ -14,7 +12,9 @@ from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from typing import Callable, Iterator
+from .config import TransformerConfig, get_config
+from .dataset import BilingualDataset, create_causal_mask
+from .model import Transformer, build_transformer
 
 
 class Trainer:

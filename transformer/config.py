@@ -1,5 +1,5 @@
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 
@@ -50,6 +50,6 @@ def get_config() -> TransformerConfig:
 if __name__ == "__main__":
     # Test get config
     config = get_config()
-    epoch = 1
+    epoch = "epoch_1"
     weights_path = config.get_weights_file_path(epoch)
     print(f"Weights file path for epoch {epoch}: {weights_path}")
