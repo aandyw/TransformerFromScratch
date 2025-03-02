@@ -183,8 +183,6 @@ class Trainer:
         for epoch in range(self.initial_epoch, self.config.num_epochs):
             batch_iterator = tqdm(self.train_dl, desc=f"Processing epoch {epoch:02d}")
 
-            self.validate(lambda msg: batch_iterator.write(msg), self.writer)
-
             for batch in batch_iterator:
                 self.model.train()
 
@@ -243,6 +241,8 @@ class Trainer:
                 },
                 model_filename,
             )
+
+            self.validate(lambda msg: batch_iterator.write(msg), self.writer)
 
     ### VALIDATION CODE ###
     def greedy_decode(self, src: torch.Tensor, src_mask: torch.Tensor) -> torch.Tensor:
