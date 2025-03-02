@@ -3,6 +3,7 @@ from typing import Callable, Iterator
 
 import torch
 import torch.nn as nn
+import torchmetrics
 from datasets import load_dataset
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
@@ -135,12 +136,11 @@ class Trainer:
         max_len_tgt = 0
 
         for item in ds_raw:
-            src_ids = tokenizer_src.encode(
-                item["translation"][self.config.lang_src]
-            ).ids
-            tgt_ids = tokenizer_src.encode(
-                item["translation"][self.config.lang_tgt]
-            ).ids
+            src_text = item["translation"][self.config.lang_src]
+            tgt_text = item["translation"][self.config.lang_tgt]
+
+            src_ids = tokenizer_src.encode(src_text).ids
+            tgt_ids = tokenizer_src.encode(tgt_text).ids
             max_len_src = max(max_len_src, len(src_ids))
             max_len_tgt = max(max_len_tgt, len(tgt_ids))
 
@@ -182,6 +182,9 @@ class Trainer:
 
         for epoch in range(self.initial_epoch, self.config.num_epochs):
             batch_iterator = tqdm(self.train_dl, desc=f"Processing epoch {epoch:02d}")
+
+            self.validate(lambda msg: batch_iterator.write(msg), self.writer)
+
             for batch in batch_iterator:
                 self.model.train()
 
@@ -215,10 +218,10 @@ class Trainer:
                 pred = proj_output.view(-1, self.tokenizer_tgt.get_vocab_size())
                 gt = label.view(-1)  # Ground truth
                 loss = self.loss_fn(pred, gt)
-                batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
+                batch_iterator.set_postfix({"Loss": f"{loss.item():6.3f}"})
 
                 # Log the loss in tensorboard
-                self.writer.add_scalar("train loss", loss.item(), self.global_step)
+                self.writer.add_scalar("Train Loss", loss.item(), self.global_step)
                 self.writer.flush()
 
                 # Backpropagation
@@ -241,16 +244,8 @@ class Trainer:
                 model_filename,
             )
 
-            self.validate(
-                lambda msg: batch_iterator.write(msg), self.global_step, self.writer
-            )
-
     ### VALIDATION CODE ###
-    def greedy_decode(
-        self,
-        source: torch.Tensor,
-        source_mask: torch.Tensor,
-    ):
+    def greedy_decode(self, src: torch.Tensor, src_mask: torch.Tensor) -> torch.Tensor:
         """
         Greedy decode for efficient validation.
         Highest probability token is selected at each step as the next word.
@@ -260,10 +255,10 @@ class Trainer:
         eos_idx = self.tokenizer_tgt.token_to_id("[EOS]")
 
         # Precompute the encoder output and reuse it for every token we get from decoder
-        encoder_output = self.model.encode(source, source_mask)
+        encoder_output = self.model.encode(src, src_mask)
 
         # Initialize the decoder input with the SOS token
-        decoder_input = torch.empty(1, 1).fill_(sos_idx).type_as(source).to(self.device)
+        decoder_input = torch.empty(1, 1).fill_(sos_idx).type_as(src).to(self.device)
 
         # Keep predicting until we reach EOS or max_len
         while True:
@@ -272,11 +267,11 @@ class Trainer:
 
             # Build the mask
             decoder_mask = create_causal_mask(decoder_input.size(1))
-            decoder_mask = decoder_mask.type_as(source_mask).to(self.device)
+            decoder_mask = decoder_mask.type_as(src_mask).to(self.device)
 
             # Calculate the output of the decoder
             out = self.model.decode(
-                encoder_output, source_mask, decoder_input, decoder_mask
+                encoder_output, src_mask, decoder_input, decoder_mask
             )
 
             # Get the next token
@@ -289,7 +284,7 @@ class Trainer:
                 [
                     decoder_input,
                     torch.empty(1, 1)
-                    .type_as(source)
+                    .type_as(src)
                     .fill_(next_word.item())
                     .to(self.device),
                 ],
@@ -301,17 +296,15 @@ class Trainer:
 
         return decoder_input.squeeze(0)  # remove batch dimension
 
-    def validate(
-        self, print_msg: Callable, global_step: int, writer: SummaryWriter
-    ) -> None:
+    def validate(self, print_msg: Callable, writer: SummaryWriter) -> None:
         """Run transformer model on the validation dataset."""
 
         self.model.eval()  # Put in eval mode
         count = 0
 
-        # source_texts = []
-        # expected = []
-        # predicted = []
+        source_texts = []
+        expected = []
+        predicted = []
 
         CONSOLE_WIDTH = 80
 
@@ -338,15 +331,34 @@ class Trainer:
                 model_out_array = model_out_tensor.numpy()
                 model_out_text = self.tokenizer_tgt.decode(model_out_array)
 
-                # source_texts.append(source_text)
-                # expected.append(target_text)
-                # predicted.append(model_out_text)
+                source_texts.append(source_text)
+                expected.append(target_text)
+                predicted.append(model_out_text)
 
                 # Print to the console
                 print_msg("-" * CONSOLE_WIDTH)
                 print_msg(f"SOURCE: {source_text}")
                 print_msg(f"TARGET: {target_text}")
                 print_msg(f"PREDICTED: {model_out_text}")
+
+        if writer:
+            # Compute the char error rate
+            metric = torchmetrics.CharErrorRate()
+            cer = metric(predicted, expected)
+            writer.add_scalar("Validation CER", cer, self.global_step)
+            writer.flush()
+
+            # Compute the word error rate
+            metric = torchmetrics.WordErrorRate()
+            wer = metric(predicted, expected)
+            writer.add_scalar("Validation WER", wer, self.global_step)
+            writer.flush()
+
+            # Compute the BLEU metric
+            metric = torchmetrics.BLEUScore()
+            bleu = metric(predicted, expected)
+            writer.add_scalar("Validation BLEU", bleu, self.global_step)
+            writer.flush()
 
 
 if __name__ == "__main__":
