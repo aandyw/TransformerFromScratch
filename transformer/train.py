@@ -13,9 +13,9 @@ from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from .config import TransformerConfig, get_config
-from .dataset import BilingualDataset, create_causal_mask
-from .model import Transformer, build_transformer
+from config import TransformerConfig, get_config
+from dataset import BilingualDataset, create_causal_mask
+from model import Transformer, build_transformer
 
 
 class Trainer:
