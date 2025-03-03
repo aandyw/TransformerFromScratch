@@ -65,6 +65,8 @@ class PositionalEncoding(nn.Module):
 
         # Create tensor of shape (max_seq_len, 1)
         pos = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(1)
+
+        # PE division term => 10000^(2 * i / d_model)
         div_term = torch.exp(
             torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
         )
