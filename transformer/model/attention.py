@@ -25,7 +25,7 @@ class MultiHeadAttention(nn.Module):
     def scaled_dot_product_attention(
         q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None, dropout: nn.Dropout | None
     ) -> tuple[Tensor, Tensor]:
-        """Compute Scaled Dot Product Attention"""
+        """Compute Scaled Dot Product Attention."""
 
         d_k = q.shape[-1]
 
@@ -47,6 +47,8 @@ class MultiHeadAttention(nn.Module):
         return weights, scores
 
     def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None) -> Tensor:
+        """Compute Multi-Headed Attention."""
+
         query = self.W_q(q)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)
         key = self.W_k(k)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)
         value = self.W_v(v)  # (bs, seq_len, d_model) -> (bs, seq_len, d_model)

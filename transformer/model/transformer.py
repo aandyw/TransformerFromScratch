@@ -27,6 +27,17 @@ class EncoderBlock(nn.Module):
         )
 
     def forward(self, x: Tensor, src_mask: Tensor) -> Tensor:
+        """
+        Forward pass through the encoder block.
+
+        Args:
+            x (Tensor): `(bs, seq_len, d_model)`.
+            src_mask (Tensor): The mask for the source language `(bs, 1, 1, seq_len)`.
+
+        Returns:
+            Tensor: `(bs, seq_len, d_model)`.
+        """
+
         x = self.residual_connections[0](
             x, lambda x: self.self_attention_block(x, x, x, src_mask)
         )
@@ -42,6 +53,8 @@ class Encoder(nn.Module):
 
     def forward(self, x: Tensor, src_mask: Tensor) -> Tensor:
         """
+        Foward pass through the encoder.
+
         Args:
             x (Tensor): The input to the encoder.
             src_mask (Tensor): The mask for the source language.
@@ -90,17 +103,23 @@ class DecoderBlock(nn.Module):
         tgt_mask: Tensor,
     ) -> Tensor:
         """
-        Decoder block ussed for machine-translation to go from source to target language.
+        Forward pass through the decoder block.
+        Decoder block ussed for machine-translation to go from source to target lang.
 
         Args:
-            x (Tensor): The input to the decoder block.
-            encoder_output (Tensor): The output from the encoder.
-            src_mask (Tensor): The mask used for the source language (e.g. English).
-            tgt_mask (Tensor): The mask used for the target language (e.g. German).
+            x (Tensor): `(bs, seq_len, d_model)`.
+            encoder_output (Tensor): `(bs, seq_len, d_model)`.
+            src_mask (Tensor): `(bs, 1, 1, seq_len)`.
+            tgt_mask (Tensor): `(bs, 1, seq_len, seq_len)`.
+
+        Returns:
+            Tensor: `(bs, seq_len, d_model)`.
         """
         x = self.residual_connections[0](
             x, lambda x: self.self_attention_block(x, x, x, tgt_mask)
         )
+
+        # Encoder output used here in cross-attention block
         x = self.residual_connections[1](
             x,
             lambda x: self.cross_attention_block(
@@ -128,6 +147,8 @@ class Decoder(nn.Module):
         tgt_mask: Tensor,
     ) -> Tensor:
         """
+        Forward pass through the decoder.
+
         Args:
             x (Tensor): The input to the decoder block.
             encoder_output (Tensor): The output from the encoder.
@@ -135,7 +156,7 @@ class Decoder(nn.Module):
             tgt_mask (Tensor): The mask used for the target language (e.g. German).
 
         Returns:
-            Tensor: _description_
+            Tensor: `(bs, seq_len, d_model)`.
         """
         for layer in self.layers:
             x = layer(x, encoder_output, src_mask, tgt_mask)
@@ -165,40 +186,55 @@ class Transformer(nn.Module):
         self.projection_layer = projection_layer
 
     def encode(self, src: Tensor, src_mask: Tensor) -> Tensor:
-        """Forward pass through the encoder.
+        """Forward pass through the encoder with input tokens of type int64.
 
         Args:
-            src (Tensor): Input tokens as type int64.
-            src_mask (Tensor): _description_
+            src (Tensor): `(bs, seq_len)`.
+            src_mask (Tensor): `(bs, 1, 1, seq_len)`.
 
         Returns:
-            Tensor: _description_
+            Tensor: `(bs, seq_len, d_model)`.
         """
-        # embedding maps token ids to dense vectors of type float32
-        src = self.src_embed(src)
+
+        # Embedding maps token ids to dense vectors of type float32
+        src = self.src_embed(src)  # (bs, seq_len) -> (bs, seq_len, d_model)
         src = self.src_pos(src)
         return self.encoder(src, src_mask)
 
     def decode(
         self, encoder_output: Tensor, src_mask: Tensor, tgt: Tensor, tgt_mask: Tensor
     ) -> Tensor:
-        """Forward pass through the decoder.
+        """
+        Forward pass through the decoder.
+        - Encoder output is used in the cross-attention block and is of type float32.
+        - Target tokens are still of type int64 and need to be embedded with input
+        embeddings + positional encoding.
 
         Args:
-            encoder_output (Tensor): _description_
-            src_mask (Tensor): _description_
-            tgt (Tensor): _description_
-            tgt_mask (Tensor): _description_
+            encoder_output (Tensor): `(bs, seq_len, d_model)`.
+            src_mask (Tensor): `(bs, 1, 1, seq_len)`.
+            tgt (Tensor): `(bs, seq_len)`.
+            tgt_mask (Tensor): `(bs, 1, seq_len, seq_len)`.
 
         Returns:
-            Tensor: _description_
+            Tensor: `(bs, seq_len, d_model)`.
         """
 
-        tgt = self.tgt_embed(tgt)
+        tgt = self.tgt_embed(tgt)  # (bs, seq_len) -> (bs, seq_len, d_model)
         tgt = self.tgt_pos(tgt)
         return self.decoder(tgt, encoder_output, src_mask, tgt_mask)
 
     def project(self, x: Tensor) -> Tensor:
+        """
+        Project the output of the decoder to the target vocabulary size.
+
+        Args:
+            x (Tensor): `(bs, seq_len, d_model)`.
+
+        Returns:
+            Tensor: `(bs, seq_len, vocab_size)`.
+        """
+
         return self.projection_layer(x)
 
 
@@ -213,6 +249,8 @@ def build_transformer(
     d_ff: int = 2048,  # size of the feed-forward layer
     dropout: float = 0.1,
 ) -> Transformer:
+    """Build and return Transformer."""
+
     # Create embedding layers
     src_embed = InputEmbeddings(d_model, src_vocab_size)
     tgt_embed = InputEmbeddings(d_model, tgt_vocab_size)

@@ -27,11 +27,13 @@ class InputEmbeddings(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         """
+        Embed input tokens.
+
         Args:
-            x (Tensor): Input tokens of shape `(batch_size, seq_len)`.
+            x (Tensor): Input tokens of shape `(bs, seq_len)`.
 
         Returns:
-            Tensor: Embedded input of shape `(batch_size, seq_len, d_model)`.
+            Tensor: Embedded input of shape `(bs, seq_len, d_model)`.
         """
         # seq_len dimension contains token ids that can be mapped back to unique word
         return self.embedding(x) * math.sqrt(self.d_model)
@@ -77,11 +79,13 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         """
+        Apply positional encoding to input embeddings.
+
         Args:
-            x (Tensor): Input embeddings of shape `(batch_size, seq_len, d_model)`.
+            x (Tensor): Input embeddings of shape `(bs, seq_len, d_model)`.
 
         Returns:
-            Tensor: Positional encodings of shape `(batch_size, seq_len, d_model)`.
+            Tensor: Positional encodings of shape `(bs, seq_len, d_model)`.
         """
 
         # Add positional encodings to input embeddings

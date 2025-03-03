@@ -154,6 +154,8 @@ class Trainer:
         return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
     def _get_model(self, vocab_src_len, vocab_tgt_len) -> Transformer:
+        """Get the transformer model."""
+
         model = build_transformer(
             vocab_src_len,
             vocab_tgt_len,
@@ -241,7 +243,8 @@ class Trainer:
                 model_filename,
             )
 
-            if epoch % 5 == 0:
+            # Run validation at every 5th epoch
+            if (epoch + 1) % 5 == 0:
                 self.validate(lambda msg: batch_iterator.write(msg), self.writer)
 
     ### VALIDATION CODE ###
@@ -310,6 +313,10 @@ class Trainer:
 
         with torch.no_grad():
             for batch in self.val_dl:
+                # Stop validation after 5 examples
+                if count >= 5:
+                    break
+
                 count += 1
 
                 # (bs, seq_len)

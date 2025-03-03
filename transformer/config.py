@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 @dataclass
@@ -37,19 +37,31 @@ class TransformerConfig:
         )
 
 
-def get_config() -> TransformerConfig:
+def get_config(overrides: Optional[Dict[str, Any]] = None) -> TransformerConfig:
     """
     Retrieve the default configuration for the Transformer model training.
+    Optionally override configuration values by passing in a dictionary.
+
+    Parameters:
+        overrides (Optional[Dict[str, Any]]): Dictionary with keys corresponding to the
+            TransformerConfig fields that should be overridden.
 
     Returns:
         TransformerConfig: An instance of TransformerConfig with default values.
     """
-    return TransformerConfig()
+    config = TransformerConfig()
+    if overrides:
+        for key, value in overrides.items():
+            if hasattr(config, key):
+                setattr(config, key, value)
+            else:
+                raise KeyError(f"Invalid config key: {key}")
+    return config
 
 
 if __name__ == "__main__":
     # Test get config
-    config = get_config()
+    config = get_config({"batch_size": 32, "num_epochs": 5})
     epoch = "epoch_1"
     weights_path = config.get_weights_file_path(epoch)
     print(f"Weights file path for epoch {epoch}: {weights_path}")

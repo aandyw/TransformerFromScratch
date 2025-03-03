@@ -7,13 +7,15 @@ class LayerNormalization(nn.Module):
     def __init__(self, eps: float = 1e-6):
         """
         LayerNorm operates independently on each sample within a batch, unlike
-        BatchNorm, which normalizes across the batch dimension. It normalizes the inputs across the feature dimension.
+        BatchNorm, which normalizes across the batch dimension. It normalizes the
+        inputs across the feature dimension.
 
         Purpose: Mitigate internal covariate shift thus improving training speed,
         stability, and convergence of the model. Also, improves generalization.
 
         Args:
-            eps (float, optional): Epsilon value to avoid division by zero. Defaults to 1e-6.
+            eps (float, optional): Epsilon value to avoid division by zero.
+                Defaults to 1e-6.
         """
         super().__init__()
         self.eps = eps
@@ -23,8 +25,18 @@ class LayerNormalization(nn.Module):
         self.bias = nn.Parameter(torch.zeros(1))  # Shift parameter (Additive)
 
     def forward(self, x: Tensor) -> Tensor:
-        mean = x.mean(-1, keepdim=True)  # Apply mean to last dimension
-        std = x.std(-1, keepdim=True)
+        """
+        Apply layer norm to last dimension of the input tensor.
+
+        Args:
+            x (Tensor): `(bs, seq_len, d_model)`.
+
+        Returns:
+            Tensor: `(bs, seq_len, d_model)`.
+        """
+        # Apply mean & std to last dimension
+        mean = x.mean(-1, keepdim=True)  # (bs, seq_len, 1)
+        std = x.std(-1, keepdim=True)  # (bs, seq_len, 1)
 
         return self.alpha * (x - mean) / (std + self.eps) + self.bias
 
@@ -43,13 +55,15 @@ class FeedForwardBlock(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         """
-        1. (batch_size, seq_len, d_model) -> (batch_size, seq_len, d_ff)
-        2. (batch_size, seq_len, d_ff) -> (batch_size, seq_len, d_model)
+        Applies linear transformations with ReLU activation function between.
+            1. (batch_size, seq_len, d_model) -> (batch_size, seq_len, d_ff)
+            2. (batch_size, seq_len, d_ff) -> (batch_size, seq_len, d_model)
 
         Args:
-            x (Tensor): The input tensor. `(batch_size, seq_len, d_model)`
+            x (Tensor): `(bs, seq_len, d_model)`.
+
         Returns:
-            Tensor: The output tensor. `(batch_size, seq_len, d_model)`
+            Tensor: `(bs, seq_len, d_model)`.
         """
         x = self.linear1(x)
         x = torch.relu(x)
@@ -66,6 +80,16 @@ class ResidualConnection(nn.Module):
         self.norm = LayerNormalization()
 
     def forward(self, x: Tensor, sublayer: nn.Module) -> Tensor:
+        """
+        Residual connection with layer normalization.
+
+        Args:
+            x (Tensor): `(bs, seq_len, d_model)`.
+            sublayer (nn.Module): The intermediate layer to wrap w/ residual connection.
+
+        Returns:
+            Tensor: `(bs, seq_len, d_model)`.
+        """
         return x + self.dropout(sublayer(self.norm(x)))
 
 
@@ -83,5 +107,17 @@ class LinearLayer(nn.Module):
         self.linear = nn.Linear(d_model, vocab_size)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Apply projection on embeddings.
+        Output will be a log probability distribution over the vocabulary.
+
+        Args:
+            x (Tensor): `(bs, seq_len, d_model)`.
+
+        Returns:
+            Tensor: `(bs, seq_len, vocab_size)`.
+        """
+
         # (bs, seq_len, d_model) -> (bs, seq_len, vocab_size)
+        # return log probabilities not probabilities
         return torch.log_softmax(self.linear(x), dim=-1)
