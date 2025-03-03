@@ -175,7 +175,9 @@ class Trainer:
             state = torch.load(model_filename)
 
             self.initial_epoch = state["epoch"] + 1
+            self.model.load_state_dict(state["model_state_dict"])
             self.optimizer.load_state_dict(state["optimizer_state_dict"])
+            self.global_step = state["global_step"]
 
     ### TRAINING CODE ###
     def train(self) -> None:
