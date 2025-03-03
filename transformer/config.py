@@ -9,7 +9,7 @@ class TransformerConfig:
     Transformer training configuration
     """
 
-    batch_size: int = 16
+    batch_size: int = 32
     num_epochs: int = 10
     lr: float = 1e-4
     seq_len: int = 350  # Max sequence length
