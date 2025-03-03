@@ -3,8 +3,12 @@ from torch import Tensor
 
 from .attention import MultiHeadAttention
 from .embeddings import InputEmbeddings, PositionalEncoding
-from .layers import (FeedForwardBlock, LayerNormalization, LinearLayer,
-                     ResidualConnection)
+from .layers import (
+    FeedForwardBlock,
+    LayerNormalization,
+    LinearLayer,
+    ResidualConnection,
+)
 
 
 ### ENCODER ###

@@ -1,9 +1,9 @@
-from typing import Any
+from typing import Any, Dict
 
 import torch
 from tokenizers import Tokenizer
 from torch import Tensor
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset
 
 
 def create_causal_mask(size: int) -> Tensor:
@@ -25,7 +25,7 @@ def create_causal_mask(size: int) -> Tensor:
 class BilingualDataset(Dataset):
     def __init__(
         self,
-        dataset,
+        dataset: Subset,
         tokenizer_src: Tokenizer,
         tokenizer_tgt: Tokenizer,
         lang_src: str,
@@ -53,7 +53,7 @@ class BilingualDataset(Dataset):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, index: Any) -> Any:
+    def __getitem__(self, index: Any) -> Dict[str, Any]:
         # Get the source and target text pair
         src_tgt_pair = self.dataset[index]
 

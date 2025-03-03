@@ -241,7 +241,8 @@ class Trainer:
                 model_filename,
             )
 
-            self.validate(lambda msg: batch_iterator.write(msg), self.writer)
+            if epoch % 5 == 0:
+                self.validate(lambda msg: batch_iterator.write(msg), self.writer)
 
     ### VALIDATION CODE ###
     def greedy_decode(self, src: torch.Tensor, src_mask: torch.Tensor) -> torch.Tensor:
