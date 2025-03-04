@@ -12,7 +12,7 @@ source .venv/bin/activate  # Activate it
 
 ## Training
 *Training for the GPU poor T_T*
-1. Upload the `notebooks/train_colab.ipynb` notebook into colab and run on T4 GPU
+1. Upload the `notebooks/train_model.ipynb` notebook into colab (or kaggle) and run on GPU
 
 *If you're GPU self-sufficient you can run locally:*
 1. Login to huggingface with `huggingface-cli login`
