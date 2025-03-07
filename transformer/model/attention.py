@@ -36,6 +36,9 @@ class MultiHeadAttention(nn.Module):
             # For all values in mask == 0 replace with -inf
             scores = scores.masked_fill(mask == 0, float("-inf"))
 
+        # Each row is a query, each column is a key. You want to convert raw scores over keys
+        # into a probability distribution. In other words, you want each row / query to have
+        # weights that sum to 1.
         scores = torch.softmax(scores, dim=-1)  # (bs, num_heads, seq_len, seq_len)
 
         if dropout is not None:

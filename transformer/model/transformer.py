@@ -107,7 +107,7 @@ class DecoderBlock(nn.Module):
         Decoder block ussed for machine-translation to go from source to target lang.
 
         Args:
-            x (Tensor): `(bs, seq_len, d_model)`.
+            x (Tensor): The decoder input `(bs, seq_len, d_model)`.
             encoder_output (Tensor): `(bs, seq_len, d_model)`.
             src_mask (Tensor): `(bs, 1, 1, seq_len)`.
             tgt_mask (Tensor): `(bs, 1, seq_len, seq_len)`.
