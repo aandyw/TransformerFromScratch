@@ -10,6 +10,11 @@ Setup the local development environment using
 source .venv/bin/activate  # Activate it
 ```
 
+## Exercise
+- `notebooks/transformer_from_scratch_exercise.ipynb` contains a practice notebook to build a transformer from scratch by filling in missing portions of the code. It's a good way to review your knowledge of Transformers.
+
+- The solution is in `notebooks/transformer_from_scratch_solution.ipynb`.
+
 ## Training
 *Training for the GPU poor T_T*
 1. Upload the `notebooks/train_model.ipynb` notebook into colab (or kaggle) and run on GPU
