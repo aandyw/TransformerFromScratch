@@ -229,7 +229,7 @@ class Transformer(nn.Module):
         Project the output of the decoder to the target vocabulary size.
 
         Args:
-            x (Tensor): `(bs, seq_len, d_model)`.
+            x (Tensor): The output of the decoder `(bs, seq_len, d_model)`.
 
         Returns:
             Tensor: `(bs, seq_len, vocab_size)`.
